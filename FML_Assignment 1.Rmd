@@ -1,0 +1,63 @@
+---
+title: "Sophia ibraeva"
+author: "Sophia"
+date: "2023-01-30"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+Movie <- read.csv("~/Downloads/movie_data.csv")
+Movie
+```
+
+```{r}
+str(Movie)
+```
+
+```{r}
+summary(Movie)
+```
+
+```{r}
+median(Movie$imdb_score)
+```
+
+```{r}
+summary(Movie$imdb_score)
+```
+
+```{r}
+class(Movie$director_name)
+```
+
+```{r}
+class(Movie$title_year)
+```
+
+```{r}
+genre_custom=as.factor(Movie$genres)
+class(genre_custom) 
+```
+
+```{r}
+genre_custom_cat_to_num<-unclass(genre_custom)
+class(genre_custom_cat_to_num)
+```
+
+```{r}
+#plot
+tab
+x=c(Movie$num_voted_users)
+y=c(Movie$num_user_for_reviews)
+plot(x,y, main = "scatter plot",
+     xlab = "num_voted_users" , ylab = "num_user_for_reviews")
+abline(lm(y~x), col= "Blue")
+```
