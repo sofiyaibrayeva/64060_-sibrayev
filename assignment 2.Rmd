@@ -1,0 +1,175 @@
+---
+title: "assignment 2"
+author: "sofiya"
+date: "2023-02-19"
+output: 
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+rm(list = ls()) #cleaning the environment
+library(readr)
+library(knitr)
+library(class)
+library(ggplot2)
+library(dplyr)
+```
+
+
+```{r}
+UniversalBank <- read.csv("~/Downloads/UniversalBank.csv")
+UniversalBank
+```
+
+
+```{r}
+str(UniversalBank)
+summary(UniversalBank)
+```
+
+
+```{r}
+UniversalBank1 <-UniversalBank[,-c(1,5)]
+UniversalBank1$Personal.Loan =as.factor(UniversalBank1$Personal.Loan)
+class(UniversalBank1$Personal.Loan)
+Education1 <- ifelse(UniversalBank1$Education == 1, 1,0)
+Education1 <- as.factor(Education1)
+Education2 <- ifelse(UniversalBank1$Education == 2, 1,0)
+Education2 <- as.factor(Education2)
+Education3 <- ifelse(UniversalBank1$Education == 3, 1,0)
+Education3 <- as.factor(Education3)
+UniversalBank2 <- data.frame(UniversalBank1,Education1 = Education1,Education2 = Education2, Education3 = Education3)
+UniversalBank3 <- UniversalBank2[,-6]
+```
+
+
+```{r}
+install.packages("caret")
+library(caret)
+Train_Index =createDataPartition(UniversalBank3$Personal.Loan,p=0.6, list = FALSE)
+Train_df =UniversalBank3[Train_Index,]
+Validation_df=UniversalBank3[-Train_Index,]
+nrow(Train_df)
+summary(Train_df)
+nrow(Validation_df)
+summary(Validation_df)
+```
+
+
+```{r}
+Norm_model <- preProcess(Train_df, method = c("center", "scale"))
+training_norm<-predict(Norm_model,Train_df)
+head(training_norm)
+validation_norm<-predict(Norm_model,Validation_df)
+head(validation_norm)
+```
+
+
+```{r}
+Test <-data.frame(Age=40,Experience=10,Income=84,Family=2,CCAvg=2,Mortgage=0,Securities.Account=0,CD.Account=0,Online=1,CreditCard=1,Education1=0,Education2=1,Education3=0)
+head(Test)
+test_norm<-predict(Norm_model,Test)
+head(test_norm)
+```
+
+
+```{r}
+Train_predictors<-training_norm[,-7]
+Train_label<-training_norm[,7]
+valid_predictors<-validation_norm[,-7]
+Valid_label<-validation_norm[,7]
+Predict_test_label<-knn(Train_predictors,test_norm,cl=Train_label,k=1)
+Predict_test_label
+```
+
+
+```{r}
+set.seed(550)
+searchGrid <- expand.grid(k=seq(1:30))
+model <- train(Personal.Loan~.,training_norm,method="knn", tuneGrid = searchGrid)
+model
+best_k <- model$bestTune[[1]]
+#K = 1 gives the best value for K 
+```
+
+
+```{r}
+install.packages("gmodels")
+library(gmodels)
+Validation_data_best_k<-predict(model,validation_norm[,-7])
+confusionMatrix(Validation_data_best_k ,Valid_label)
+CrossTable(Validation_data_best_k,Valid_label)
+```
+
+
+```{r}
+Prediction_new<-knn(Train_predictors,test_norm,cl=Train_label,k=best_k)
+Prediction_new
+#the loan offer will not be accepted because K=0
+```
+
+
+```{r}
+Test_Index_N = createDataPartition(UniversalBank3$Personal.Loan,p=0.2, list=FALSE) # 20% reserved for Test
+Test_Data_N = UniversalBank3[Test_Index_N,]
+TrainAndValid_Data = UniversalBank3[-Test_Index_N,] # Validation and Training data is rest
+Train_Index_N = createDataPartition(TrainAndValid_Data$Personal.Loan,p=25/40, list=FALSE) # 50% of remaining data as training
+Train_Data_N = TrainAndValid_Data[Train_Index_N,]
+Validation_Data_N = TrainAndValid_Data[-Train_Index_N,] # rest as validation
+nrow(Train_Data_N)
+summary(Train_Data_N)
+nrow(Validation_Data_N)
+summary(Validation_Data_N)
+nrow(Test_Data_N)
+summary(Test_Data_N)
+```
+
+
+```{r}
+Norm_model_N <- preProcess(Train_Data_N, method = c("center", "scale"))
+training_norm_N<-predict(Norm_model_N,Train_Data_N)
+head(training_norm_N)
+validation_norm_N<-predict(Norm_model_N,Validation_Data_N)
+head(validation_norm_N)
+Test_norm_N<-predict(Norm_model_N,Test_Data_N)
+head(Test_norm_N)
+```
+
+
+```{r}
+Train_predictors_N <-training_norm_N[,-7]
+Train_label_N<-training_norm_N[,7]
+valid_predictors_N<-validation_norm_N[,-7]
+Valid_label_N<-validation_norm_N[,7]
+Test_predictors_N<-Test_norm_N[,-7]
+Test_label_N<-Test_norm_N[,7]
+training_prediction_N <-knn(Train_predictors_N,Train_predictors_N,cl=Train_label_N,k=best_k)
+head(training_prediction_N)
+validation_prediction_N <-knn(Train_predictors_N,valid_predictors_N,cl=Train_label_N,k=best_k)
+head(validation_prediction_N)
+Test_prediction_N <-knn(Train_predictors_N,Test_predictors_N,cl=Train_label_N,k=best_k)
+head(Test_prediction_N)
+```
+
+
+#using confusionMatrix for all 3 datasets Training, Validation and Test
+```{r}
+confusionMatrix(training_prediction_N,Train_label_N)
+CrossTable(training_prediction_N,Train_label_N)
+confusionMatrix(validation_prediction_N,Valid_label_N)
+CrossTable(validation_prediction_N,Valid_label_N)
+confusionMatrix(Test_prediction_N,Test_label_N)
+CrossTable(Test_prediction_N,Test_label_N)
+```
+##The confusion matrix was made for three different sets: training, validation, and test. The training set showed 100% accuracy with k=1, which is typical for KNN models since the values were already seen. The validation set showed overall accuracy with a high sensitivity but a low specificity. This indicates that the model struggles to predict which customers will accept the loan accurately. However, the model is very good at predicting which customers will not accept the loan. The test set also showed a 95% overall accuracy, and the confusion matrix was similar to the validation set, which is positive. The model had a high sensitivity but a low specificity in both sets, indicating that it accurately predicted which customers would not accept the loan but struggled to predict which ones would.
+
+
+
+
