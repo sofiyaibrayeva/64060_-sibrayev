@@ -1,0 +1,143 @@
+---
+title: "assignment 3"
+author: "sofiya ibrayeva"
+date: "2023-03-06"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## This assignment aims to use Naive Bayes to classify data from UniversalBank.csv, which contains information on 5000 customers of Universal Bank. Only 9.6% of customers accepted the loan offer. We will focus on two predictors, Online and Credit Card (abbreviated as CC), and the outcome, Personal Loan (abbreviated as Loan). Partition the data into 60% training and 40% validation sets.For this we will be using Easy method, Naive Bayers equation and Naive Bayers function.
+
+```{r}
+ rm(list = ls())
+library(readr)
+library(caret)
+library(knitr)
+library(class)
+library(ggplot2)
+library(dplyr)
+library(e1071)
+library(reshape2)
+library(tinytex)
+library(knitr)
+```
+
+## Importing the dataset
+
+```{r}
+UniversalBank <- read.csv("~/Downloads/UniversalBank.csv")
+UniversalBank
+str(UniversalBank)
+summary(UniversalBank)
+```
+
+## Converting relevant columns to factor
+
+```{r}
+UniversalBank$Personal.Loan=as.factor(UniversalBank$Personal.Loan)
+UniversalBank$CreditCard=as.factor(UniversalBank$CreditCard)
+UniversalBank$Online=as.factor(UniversalBank$Online)
+```
+
+## dividing the data into the training set (60%) and validation set (40%)
+
+```{r}
+set.seed(70)
+train_index = createDataPartition(UniversalBank$Personal.Loan, p= .6, list=FALSE)
+Validation_index <- setdiff(row.names(UniversalBank), train_index)
+train_df <- UniversalBank[train_index, ]
+nrow(train_df)
+```
+
+```{r}
+summary(train_df)
+Validation_df <- UniversalBank[Validation_index, ]
+nrow(Validation_df)
+summary(Validation_df)
+```
+
+## Task A - creating a pivot table or the training data with Online as a column variable, CC as a row variable, and Loan as a secondary row variable
+
+```{r}
+library(reshape2)
+melted_bank = melt(train_df,id.vars = c("CreditCard","Personal.Loan"), measure.vars = "Online")
+pivot_table <- dcast(melted_bank, CreditCard+Personal.Loan ~ variable, fun.aggregate=length)
+pivot_table
+```
+
+## Task B - classifying a customer who owns a bank credit card and is actively using online banking services.
+
+```{r}
+P_acceptance <- (48/514)
+P_acceptance
+```
+
+## Task C
+
+```{r}
+Loan.online <- addmargins(table(train_df[,c(13,10)]))
+Loan.online
+Loan.CC <- addmargins(table(train_df[,c(14,10)]))
+Loan.CC
+```
+
+## Task D
+
+```{r}
+##P CC = 1 , Loan = 1
+A = (85/288)
+paste("P (CC = 1, Loan = 1) =", round(A*100,2),"%")
+##P Online=1, Loan=1
+B = (168/288)
+paste("P(Online=1, Loan=1) = ", round(B*100,2),"%")
+##P Loan = 1 
+C = (288/3000)
+paste("P (Loan = 1) = ", round(C*100,2),"%")
+#P(CC=1, Loan=0)
+D = (775/2712)
+paste("P(CC=1, Loan=0) = ", round(D*100,2),"%")
+#P(Online=1, Loan=0)
+E = (1604/2712)
+paste("P(Online=1, Loan=0) = ", round(E*100,2),"%")
+#P(Loan=0)
+F = (2712/3000)
+paste("P(Loan=0) = ", round(F*100,2),"%")
+```
+
+## Task E - Naive Bayes probability calculation
+
+```{r}
+Naive_Bay_Prob <- ((A*B*C)/((A*B*C)+(D*E*F)))
+Naive_Bay_Prob
+```
+
+```{r}
+library(e1071)
+naive_train = train_df[,c(10,13:14)]
+naive_Validation = Validation_df[,c(10,13:14)]
+naive_Validation
+```
+
+## Task F
+
+# The value contained in pivot table B and using Naive Bayes method are pretty similar. The first result was 9.34% while the second one is 9.76%. Naive Bayes may offer more flexibility in predictions, but may be less precise due to its assumption of independence among features.The exact method and Naive Bayes method both predict outcomes based on independent variables, but the exact method requires exact classifications of these variables while Naive Bayes does not. The exact method may offer more precise predictions, but it is limited by its requirement for exact classification.
+
+## Task G
+
+```{r}
+naive_train = train_df[,c(10,13:14)]
+naive_Validation = Validation_df[,c(10,13:14)]
+naivebayes_M = naiveBayes(Personal.Loan~.,data=naive_train)
+naivebayes_M
+```
+
+```{r}
+Naive.Bayes.Final <-(0.2951389*0.5833333*0.096)/((0.2951389*0.5833333*0.096)+(0.285767*0.5914454*0.904)) 
+Naive.Bayes.Final
+paste("Naive Bayes probability using Naive function is", round(Naive.Bayes.Final,4)*100,"%")
+```
