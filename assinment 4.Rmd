@@ -1,0 +1,105 @@
+---
+title: "assignment 4"
+author: "sofiya"
+date: "2023-03-20"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# The purpose of this assignment is to use k-Means for clustering.
+
+
+```{r}
+ rm(list = ls())
+#install.packages("factoextra")
+#install.packages("ISLR")
+#install.packages("NbClust")
+#install.packages("cluster")
+library(readr)
+library(caret)
+library(knitr)
+library(class)
+library(ggplot2)
+library(dplyr)
+library(e1071)
+library(reshape2)
+library(tinytex)
+library(knitr)
+library(tidyverse)
+library(factoextra)
+library(ISLR)
+library(NbClust)
+library(cluster)
+set.seed(123)
+```
+
+## Importing the dataset
+
+```{r}
+Pharma <- read.csv("~/Downloads//Pharmaceuticals.csv")
+Pharma
+#view(Pharma)
+str(Pharma)
+#summary(Pharma)
+```
+
+## Using only the numerical variables (1 to 9) to cluster the 21 firms. Justify the various choices made in
+conducting the cluster analysis, such as weights for different variables, the specific clustering algorithm(s) used, the number of clusters formed, and so on
+```{r}
+colMeans(is.na(Pharma))
+df <- na.omit(Pharma)
+summary(df)
+```
+```{r}
+names(df)
+colnames(df)
+row.names(df) <- df[,1]
+Pharma0 <- df[,3:11]
+head(Pharma0)
+```
+```{r}
+Pharma01 <- scale(Pharma0)
+head(Pharma01)
+```
+```{r}
+fviz_nbclust(Pharma01, kmeans, method = "wss") + labs(substitute("Elbow Method"))
+```
+
+```{r}
+fviz_nbclust(Pharma01, kmeans, method = "silhouette") + labs(substitute("Silhouette Method"))
+```
+
+```{r}
+set.seed(64060)
+k5 <- kmeans(Pharma01, centers = 5, nstart = 25)
+k5$centers
+fviz_cluster(k5, data=Pharma01)
+distance <- dist(Pharma01, method = "euclidean")
+fviz_dist(distance)
+```
+```{r}
+fit <- kmeans(Pharma01, 5)
+aggregate(Pharma01, by=list(fit$cluster), FUN=mean)
+Pharma02 <- data.frame(Pharma01, fit$cluster)
+Pharma02
+clusplot(Pharma01, fit$cluster, color = TRUE, shade = FALSE, labels = 2, lines = 0)
+```
+##Q2
+# The clusters were generated using numerical parameters. Cluster 1 includes INJ, MRK, PFE, and GSK, which are the most highly capitalized companies and efficiently manage their operations through financing (leverage below 0.47). Cluster 2 contains AHM, WPI, and AVE, which have the lowest asset turnover and beta values, indicating that their stocks may perform well compared to the market benchmark. These companies are the least capitalized on the market and do not acquire money to run their businesses. Cluster 3 comprises CHTT, MRX, LVX, and ELN, which have the highest revenue increase and offer strong returns due to their high beta values. Cluster 4 consists of AGN, BAY, and RHA, which have the highest expense to earnings ratio and are the least profitable. Their Return on Equity is less than 1, indicating that investing in these businesses is unlikely to produce high returns. Cluster 5 includes ABT, SGP, NVS, AZN, BMY, and WYE, which have the lowest sales growth rate, the highest net profit margin, and the highest asset turnover rate. These businesses are flourishing because they are growing.
+
+##Q3
+#Each cluster was given a suitable name based on one or all of the variables in the dataset.
+# Each cluster was carefully examined to identify patterns in media coverage, location, and exchange.
+#Cluster 1 contains stocks with average personality traits, indicating that they are neither strong nor have they generated impressive returns recently.
+#The businesses in Cluster 2 are located evenly around the world, and despite having technically sound ideas, they have received overwhelmingly positive media coverage.
+#Cluster 3 has a high leverage ratio but is still considered relatively stable based on their financial situation.
+#Stocks in Cluster 4 are recommended to be held since the media predicts that they will eventually become good assets.
+#Finally, Cluster 5 consists of companies with a substantial net profit margin and is advised to be kept in the cluster for a long duration.
+
+##Q4
+#Each cluster was given a suitable name based on one or all of the variables in the dataset.
+#Cluster 1 is called "An Efficient Arrangement" because the stocks in this group are well-established and efficiently managed. Cluster 2 is named "The Collection of Gold Miners" because even though these stocks have a low beta, market forecasts are highly bullish.Cluster 3 is known as "The Original Arrangement" as it comprises stocks with strong financial and other fundamental factors. Cluster 4 is dubbed "A Group of Bears" as these stocks have the best returns.Cluster 5 is named "Recurrent Cluster" since businesses with a large net profit margin are doing well and it's highly recommended to add their stocks to the portfolio.
+
